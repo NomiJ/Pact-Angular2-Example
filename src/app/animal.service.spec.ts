@@ -7,61 +7,61 @@ import {
   RequestMethod
 } from '@angular/http';
 import { AnimalService } from './animal.service';
-import { Pact } from 'pact';
+declare function require(name: string);
+
+const Pact = require('pact-web');
 
 describe('AnimalService', () => {
   let provider;
 
-  beforeAll(function (done) {
-
-    provider = Pact({ consumer: 'Karma Jasmine', provider: 'Hello' });
-    // required for slower Travis CI environment
-    setTimeout(function () { done(); }, 2000);
+  beforeAll(function(done) {
+    provider = Pact({ consumer: 'Karma Jasmine', provider: 'Hello', web: true });
+    provider.addInteraction({
+      uponReceiving: 'a request for hello',
+      withRequest: {
+        method: 'GET',
+        path: '/sayHello'
+      },
+      willRespondWith: {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: { reply: 'Hello' }
+      }
+    })
+      .then(function() {
+        done();
+      }, function(err) { done.fail(err); });
   });
 
-  afterAll(function (done) {
+  afterAll(function(done) {
     provider.finalize()
-      .then(function () { done() }, function (err) { done.fail(err) })
-  })
+      .then(function() { done(); }, function(err) { done.fail(err); });
+  });
 
-  describe("sayHello", function () {
-    beforeEach(function (done) {
-      TestBed.configureTestingModule({
-        providers: [AnimalService],
-        imports: [HttpModule]
-      });
-      provider.addInteraction({
-        uponReceiving: 'a request for hello',
-        withRequest: {
-          method: 'GET',
-          path: '/sayHello'
-        },
-        willRespondWith: {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-          body: { reply: "Hello" }
-        }
-      })
-        .then(function () { done() }, function (err) { done.fail(err) })
-    })
-    it('should ...', inject([AnimalService], (service: AnimalService) => {
-      expect(service).toBeTruthy();
-    }));
-    it("should say hello", function (done) {
-      inject([AnimalService], (service: AnimalService) => {
+  beforeEach(function() {
+    TestBed.configureTestingModule({
+      providers: [AnimalService],
+      imports: [HttpModule]
+    });
+  });
 
-        //Run the tests
-        service.sayHello('http://localhost:1234')
-          .subscribe((res: any) => {
-            expect(JSON.parse(res.responseText)).toEqual({ reply: "Hello" })
-            done();
-          }, err => done.fail(err), () => {
-          });
 
-      })();
-    })
+  it('should say hello', function(done) {
+    inject([AnimalService], (service: AnimalService) => {
 
-    // verify with Pact, and reset expectations
-    it('successfully verifies', function (done) { provider.verify(); done(); })
-  })
+      // Run the tests
+      service.sayHello('http://localhost:1234')
+        .subscribe((res: any) => {
+          expect(res.data.reply).toEqual('Hello');
+          done();
+        }, err => done.fail(err), () => {
+        });
+
+    })();
+  });
+  // verify with Pact, and reset expectations
+  it('successfully verifies', (done) => { provider.verify(); done(); });
+  it('should ...', inject([AnimalService], (service: AnimalService) => {
+     expect(service).toBeTruthy();
+   }));
 });

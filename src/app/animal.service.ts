@@ -14,7 +14,6 @@ export class AnimalService {
 
   constructor(private http: Http) { }
 
-  
     /*
       The Api should say hello.
     */
@@ -23,7 +22,7 @@ export class AnimalService {
         let headers = new Headers({});
         let options = new RequestOptions({ headers: headers });
 
-        return this.http.post(localBaseUrl ,  options)
+        return this.http.get(localBaseUrl + '/sayHello',  options)
             .map(this.extractData)
             .catch((err) => { return this.handleError(err); });
     }
